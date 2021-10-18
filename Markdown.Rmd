@@ -436,3 +436,49 @@ df_norsve %>%
   theme_bw()
 ```
 
+#Oppgave 4
+
+
+```{r}
+df_norge <- dframe %>% 
+  filter(country=="Norway") %>% 
+  rename(import=NE.IMP.GNFS.CD,
+         eksport=NE.EXP.GNFS.CD,
+         år=year,
+         land=country) %>% 
+  mutate(land=recode(land,
+                      'Norway' = "Norge"))
+df_norge <- arrange(df_norge, år)
+
+df_norge <- df_norge %>% 
+  mutate(prosImp = 100 * (import - lag(import))/lag(import))
+
+df_norge <- df_norge %>% 
+  mutate(prosEks = 100 * (eksport - lag(eksport))/lag(eksport))
+```
+```{r}
+df_norge %>% mutate(cumsum(prosImp))
+```
+
+```{r}
+dframe %>% 
+  filter(country %in% c("Norway", "Sweden")) %>% 
+  rename(import=NE.IMP.GNFS.CD,
+         eksport=NE.EXP.GNFS.CD,
+         år=year) %>%
+  mutate(import=import/1e9,
+         eksport=eksport/1e9,
+         country=recode(country,
+                        'Norway' = "Norge",
+                        'Sweden' = "Svergie")) %>% 
+  select(år, import, eksport) %>% 
+  pivot_longer(-år, names_to="aktivitet", values_to="verdi") %>%
+  ggplot(aes(x=år, y=verdi, col=aktivitet)) +
+  geom_line() +
+  labs(title="Norsk og svensk eksport og import (nominelle tall)",
+       x =" ",
+       y ="milliarder US$")+
+  theme_bw()
+
+```
+
