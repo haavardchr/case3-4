@@ -140,7 +140,7 @@ Lager spredningsplott av gpd/co2 og co2/temperatur.
 ```{r}
 p4 <-
   dframe %>% 
-  ggplot(aes(x=co2, y=bnp_pc)) +
+  ggplot(aes(x=bnp_pc, y=co2)) +
   geom_point() +
   labs(x = "Co2",
        y = "Bruttonansjonalprodukt (US$) per capita") +
@@ -148,7 +148,7 @@ p4 <-
 
 p5 <-
   dframe %>% 
-  ggplot(aes(x=temperatur, y=co2)) +
+  ggplot(aes(x=co2, y=temperatur)) +
   geom_point() +
   labs(x = "Temperatur",
        y = "Co2") +
@@ -230,6 +230,15 @@ dframe %>%
   geom_point() +
   theme_bw()
 ```
+#Oppgave 3
+
+```{r}
+linreg <- lm(co2 ~ temperatur, data = dframe)
+linreg
+plotModel(linreg)
+```
+Den lineære regresjonsmodellen viser at det er en klar sammenheng mellom økende co2 utslipp og økende temperatur.
+
 
 #Case 4
 
@@ -351,3 +360,79 @@ nor_eksport %>%
 Arrange() funksjonen viser at fra 2008 til 2009 var det størst nedgang, ~28%. Og arrange(desc) viser at fra 1972 til 1973 var det størst økning, ~38%.
 
 Endringene ser ut til å følge samme mønster, de årene det er stor nedgang i import er det også stor nedgang i eksport. Samme med de årene der det er en stor økning i import, der er det også stor økning i eksport. Det følger ikke nøyaktig samme utviklingen, men fra grafen og utregningen ser en at Norges globale handel følger samme mønster på både import og eksport fronten.  
+
+#Import og eksport satt sammen
+
+Slår sammen de to tabellene
+
+```{r}
+dframe <- left_join(df_import, df_export, by = c("iso2c", "country", "year"))
+head(dframe)
+```
+Ser fortsatt på Norge
+
+```{r}
+dframe %>%
+  filter(country=="Norway") %>% 
+  rename(import=NE.IMP.GNFS.CD,
+         eksport=NE.EXP.GNFS.CD,
+         år=year) %>%
+  mutate(import=import/1e9,
+         eksport=eksport/1e9) %>% 
+  select(år, import, eksport) %>% 
+  pivot_longer(-år, names_to="aktivitet", values_to="verdi") %>% 
+  ggplot(aes(x=år, y=verdi, col=aktivitet)) +
+  geom_line() +
+  scale_color_manual(values=c("dark red", "dark blue")) +
+  labs(title="Norsk eksport og import av varer og tjenester \n (nominelle tall)",
+       x =" ",
+       y = "milliarder US$") +
+  theme_bw()
+```
+Sammenligner Norge og Svergie
+
+```{r}
+df_export %>%
+  filter(country %in% c("Norway","Sweden")) %>% 
+  rename(eksport=NE.EXP.GNFS.CD,
+         land=country,
+         år=year) %>%
+  mutate(eksport=eksport/1e9) %>% 
+  ggplot(aes(x=år, y=eksport, col=land)) +
+  geom_line() +
+  labs(title="Eksport av varer og tjenester \n (nominelle tall)",
+       x =" ",
+       y = "milliarder US$") +
+  theme_bw()
+```
+#Oppgave 3
+
+Endrer til norske landnavn
+
+```{r}
+df_norsve <- df_export %>% 
+  filter(country %in% c("Norway","Sweden")) %>% 
+  rename(eksport=NE.EXP.GNFS.CD,
+         land=country,
+         år=year) %>%
+  mutate(eksport=eksport/1e9)
+
+df_norsve <-
+  df_norsve %>% mutate(land=recode(land,
+                                 'Norway' = "Norge",
+                                 'Sweden' = "Svergie"))
+
+
+```
+
+```{r}
+df_norsve %>% 
+  filter(land %in% c("Norge", "Svergie")) %>% 
+  ggplot(aes(x=år, y=eksport, col=land)) +
+  geom_line() +
+  labs(title="Eksport av varer og tjenester \n (nominelle tall)",
+       x =" ",
+       y = "milliarder US$") +
+  theme_bw()
+```
+
