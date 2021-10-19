@@ -380,7 +380,7 @@ dframe %>%
   mutate(import=import/1e9,
          eksport=eksport/1e9) %>% 
   select(år, import, eksport) %>% 
-  pivot_longer(-år, names_to="aktivitet", values_to="verdi") %>% 
+  pivot_longer(-år, names_to="aktivitet", values_to="verdi") %>%
   ggplot(aes(x=år, y=verdi, col=aktivitet)) +
   geom_line() +
   scale_color_manual(values=c("dark red", "dark blue")) +
@@ -456,29 +456,75 @@ df_norge <- df_norge %>%
 df_norge <- df_norge %>% 
   mutate(prosEks = 100 * (eksport - lag(eksport))/lag(eksport))
 ```
+
 ```{r}
-df_norge %>% mutate(cumsum(prosImp))
+df_norge <- df_norge %>% 
+  mutate(sdpeks=cumsum(replace_na(prosEks, 0)),
+         sdpimp=cumsum(replace_na(prosImp, 0)))
+
+df_norge
 ```
 
 ```{r}
-dframe %>% 
-  filter(country %in% c("Norway", "Sweden")) %>% 
-  rename(import=NE.IMP.GNFS.CD,
-         eksport=NE.EXP.GNFS.CD,
-         år=year) %>%
+df_norge %>% 
+  filter(år>=1970) %>% 
   mutate(import=import/1e9,
-         eksport=eksport/1e9,
-         country=recode(country,
-                        'Norway' = "Norge",
-                        'Sweden' = "Svergie")) %>% 
-  select(år, import, eksport) %>% 
+         eksport=eksport/1e9) %>% 
+  select(år, sdpimp, sdpeks) %>%
+  rename(Kumulativ_import=sdpimp,
+         Kumulativ_eksport=sdpeks) %>% 
   pivot_longer(-år, names_to="aktivitet", values_to="verdi") %>%
   ggplot(aes(x=år, y=verdi, col=aktivitet)) +
   geom_line() +
-  labs(title="Norsk og svensk eksport og import (nominelle tall)",
+  scale_color_manual(values=c("dark red", "dark blue")) +
+  labs(title="Norsk kumulativ eksport og import av varer og tjenester \n (nominelle tall)",
        x =" ",
-       y ="milliarder US$")+
+       y = "milliarder US$") +
   theme_bw()
+```
+```{r}
+df_svergie <- dframe %>% 
+  filter(country=="Sweden") %>% 
+  rename(import=NE.IMP.GNFS.CD,
+         eksport=NE.EXP.GNFS.CD,
+         år=year,
+         land=country) %>% 
+  mutate(land=recode(land,
+                      'Sweden' = "Svergie"))
 
+df_svergie <- arrange(df_svergie, år)
+
+df_svergie <- df_svergie %>% 
+  mutate(prosImp = 100 * (import - lag(import))/lag(import))
+
+df_svergie <- df_svergie %>% 
+  mutate(prosEks = 100 * (eksport - lag(eksport))/lag(eksport))
+```
+
+
+```{r}
+df_svergie <- df_svergie %>% 
+  mutate(sdpeks=cumsum(replace_na(prosEks, 0)),
+         sdpimp=cumsum(replace_na(prosImp, 0)))
+
+df_svergie
+```
+
+```{r}
+df_svergie %>% 
+  filter(år>=1970) %>% 
+  mutate(import=import/1e9,
+         eksport=eksport/1e9) %>% 
+  select(år, sdpimp, sdpeks) %>%
+  rename(Kumulativ_import=sdpimp,
+         Kumulativ_eksport=sdpeks) %>% 
+  pivot_longer(-år, names_to="aktivitet", values_to="verdi") %>%
+  ggplot(aes(x=år, y=verdi, col=aktivitet)) +
+  geom_line() +
+  scale_color_manual(values=c("dark red", "dark blue")) +
+  labs(title="Svensk kumulativ eksport og import av varer og tjenester \n (nominelle tall)",
+       x =" ",
+       y = "milliarder US$") +
+  theme_bw()
 ```
 
